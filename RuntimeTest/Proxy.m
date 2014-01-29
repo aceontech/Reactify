@@ -8,7 +8,10 @@
 
 #import "Proxy.h"
 #import <objc/runtime.h>
+#import <objc/message.h>
 #import <ReactiveCocoa.h>
+
+#import "DynamicDelegateNextObject.h"
 
 @interface Proxy()
 @property (nonatomic,strong) NSMutableDictionary *signalMap;
@@ -21,13 +24,44 @@
     NSString *selectorString = NSStringFromSelector(invocation.selector);
     RACSubject *signal = self.signalMap[selectorString];
     
-    // TODO: Get arguments from [invocation methodSignature];
-    [signal sendNext:nil];
+    NSMethodSignature *signature = [invocation methodSignature];
+    NSMutableArray *arguments = [[NSMutableArray alloc] init];
+    if ([signature numberOfArguments] > 2)
+    {
+        for (NSInteger i = 2; i < [signature numberOfArguments]; i++)
+        {
+            id argument;
+            [invocation getArgument:&argument atIndex:i];
+            
+            [arguments addObject:argument];
+        }
+    }
+    
+    DynamicDelegateNextObject *next;
+    
+    NSInteger argumentsCount = [arguments count];
+    BOOL hasReturnType = strcmp([signature methodReturnType], @encode(void)) != 0;
+    
+    if (argumentsCount || hasReturnType) {
+        next = [[DynamicDelegateNextObject alloc] init];
+    }
+    
+    if (argumentsCount) {
+        next.arguments = arguments;
+    }
+    
+    if (hasReturnType) {
+        next.returnBlock = ^(void *returnObject) {
+            [invocation setReturnValue:returnObject];
+        };
+    }
+    
+    [signal sendNext:next];
 }
 
 - (IMP)methodForSelector:(SEL)aSelector
 {
-    return imp_implementationWithBlock(^(){ return @"SHIT YO"; });
+    return NULL; //imp_implementationWithBlock(^(){ return @"SHIT YO"; });
 }
 
 - (NSMutableDictionary *)signalMap

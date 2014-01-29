@@ -14,7 +14,10 @@
 - (void)startCallingDelegate
 {
     [self.delegate firstMethod];
-    [self.delegate secondMethod:@"a parameter"];
+    NSString *str2 = [self.delegate secondMethod:@"a parameter"];
+    BOOL boolean = [self.delegate thirdMethod];
+    NSString *str = [self.delegate fourthMethod];
+    NSLog(@"END");
 }
 
 @end

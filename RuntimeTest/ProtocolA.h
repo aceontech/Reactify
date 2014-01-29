@@ -11,6 +11,8 @@
 @protocol ProtocolA <NSObject>
 
 - (void)firstMethod;
-- (void)secondMethod:(NSString *)param;
+- (NSString *)secondMethod:(NSString *)param;
+- (BOOL)thirdMethod;
+- (NSString *)fourthMethod;
 
 @end

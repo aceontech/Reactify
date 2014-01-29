@@ -12,6 +12,7 @@
 #import "Proxy.h"
 #import "ObjectA.h"
 #import <ReactiveCocoa.h>
+#import "DynamicDelegateNextObject.h"
 
 @interface RuntimeTestTests : XCTestCase
 @end
@@ -30,24 +31,6 @@
 
 - (void)testExample
 {
-//    Class ProtocolAAdoptingClass = objc_allocateClassPair([NSObject class], "ProtocolAAdoptingClass", 0);
-//    class_addProtocol(ProtocolAAdoptingClass, @protocol(ProtocolA));
-//
-//    id<ProtocolA> obj = [[ProtocolAAdoptingClass alloc] init];
-//    
-//    XCTAssertTrue([obj conformsToProtocol:@protocol(ProtocolA)], @"Object doesn't conform to protocol");
-//    
-//    ////////////
-//    
-//    Proxy *proxy = [[Proxy alloc] init];
-//    
-//    SEL firstMethod = @selector(firstMethod);
-//    NSString *res = [proxy methodForSelector:firstMethod](proxy, firstMethod);
-//    
-//    XCTAssertNotNil(res, @"Res should return something");
-    
-    ///////////
-    
     Class DynamicDelegate = objc_allocateClassPair([Proxy class], "DelegatingClass", 0);
     class_addProtocol(DynamicDelegate, @protocol(ProtocolA));
     
@@ -59,9 +42,24 @@
         NSLog(@"NEXT");
     }];
     
-    [[(Proxy *)dynamicDelegateInstance signalForSelector:@selector(secondMethod:)] subscribeNext:^(id x) {
-        NSLog(@"NEXT");
+    [[(Proxy *)dynamicDelegateInstance signalForSelector:@selector(secondMethod:)] subscribeNext:^(DynamicDelegateNextObject *x) {
+        NSLog(@"NEXT %@", x.arguments);
+        NSString *str = @"meh";
+        x.returnBlock(&str);
     }];
+    
+    [[(Proxy *)dynamicDelegateInstance signalForSelector:@selector(thirdMethod)] subscribeNext:^(DynamicDelegateNextObject *x) {
+        NSLog(@"NEXT");
+        BOOL yes = YES;
+        x.returnBlock(&yes);
+    }];
+    
+    [[(Proxy *)dynamicDelegateInstance signalForSelector:@selector(fourthMethod)] subscribeNext:^(DynamicDelegateNextObject *x) {
+        NSLog(@"NEXT");
+        NSString *str = @"test!";
+        x.returnBlock(&str);
+    }];
+    
     [objA startCallingDelegate];
     
     XCTAssertTrue([dynamicDelegateInstance conformsToProtocol:@protocol(ProtocolA)], @"Object doesn't conform to protocol");
